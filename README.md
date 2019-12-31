@@ -6,13 +6,13 @@ ByteWedge is a schema agnostic Online Analytical Processing system designed for 
 * Supports GraphQL with, group by, order by and  aggregation functions, like avg, min, max, sum, count, quantile(histogram).
 * Supports [CEL](https://opensource.google/projects/cel) (except builtin macros) in where clause
 
-# demo
-Please refer to [Wiki](https://github.com/bytewedge/bytewedge/wiki) for detailed information. ByteWedge uses tags (up to 10) to identify data source. In [demo](http://ui.demo.bytewedge.com/) cluster, [Two files](https://github.com/bytewedge/bytewedge/tree/master/demo) have been uploaded. Their tags are are in the following table. Note: both have **demo** tag.
+# live demo
+Please refer to [Wiki](https://github.com/bytewedge/bytewedge/wiki) for detailed information. ByteWedge uses tags (up to 10) to identify data source. In [demo](http://ui.demo.bytewedge.com/) cluster, [Two files](https://github.com/bytewedge/bytewedge/tree/master/demo) have been uploaded. Note: both have **demo** tag.
 
 | name  | origin  |  tag 1  | tag 2   |
 |---|---|---|---|
-| gevents.json | [github event api](https://api.github.com/events) | github | demo |   |   |
-| countries-unescaped.json | [contries](https://github.com/mledoze/countries/blob/master/dist/countries-unescaped.json)|countries|demo|
+| gevents.json | [github event api snapshot](https://api.github.com/events) | github | demo |   |   |
+| countries-unescaped.json | [countries](https://github.com/mledoze/countries/blob/master/dist/countries-unescaped.json)|countries|demo|
 
 Note: ByteWedge uses dotted json path notation.
 
@@ -43,7 +43,7 @@ query {
 }
 
 ```
-### demo 3 (note: from tag demo)
+### demo 3 (query with **demo** tag)
 returns translations of a country and actor in github from data source tagged "demo" where country area equals 180 and github user id contains character "1". (it doesn't make any sense, ByteWedge can handle it)
 ```graphql
 query {
