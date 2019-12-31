@@ -1,13 +1,39 @@
-# bytewedge
+# ByteWedge
 ByteWedge is a schema agnostic Online Analytical Processing system designed for append only time series data. The highlights are:
 * Schema agnostic. Upload a JSON, search, aggregate. DONE!
-* Low total cost ownership. Data storage requires less than 50% data size. For highly repetitive data (machine generated data), storage can be as low as 5% of the original data size.
+* Low total cost ownership. Data storage requires less than 50% data size. For highly repetitive data (machine generated data), storage can be as low as **5% of the original data**.
 * Supports UTF-8 encoded full text search. Prefix, suffix, exact match, wild card, English, Chinese...
 * Supports GraphQL with, group by, order by and  aggregation functions, like avg, min, max, sum, count, quantile(histogram).
 * Supports [CEL](https://opensource.google/projects/cel) (except builtin macros) in where clause
 
+Please refer to [Wiki](https://github.com/bytewedge/bytewedge/wiki) for detailed information. 
+```
+┌─────────────ByteWedge Kubernetes Namespace───────┐                                                   
+│                                                  │                  ┌───Customer Data Center────────┐
+│  ┌──────cockroachdb───────┐                      │                  │ ┌───────────┐                 │
+│  │      BLOB Store        │◀──────────────┐      │                  │ │ Wedge A   .      ┌──────┐   │
+│  └───────▲────────────────┘               │      │                  │ │          ( )◀────│json A│   │
+│   ┌──────┼───┐                            │   wss://mqtt    ┌───────┤ │     tag A '      └──────┘   │
+│   │┌─────┴─┬─┴┐         .───.        ┌────────┐  │          │       │ │     ...   │                 │
+│   ││┌──────┼──┴┐       (     )       │I┌──────┴─┐.          │       │ └───────────┘                 │
+│   └┤│┌─────┴───┴┐      │`───◀┼───────│ │Injector( )◀────────┤       │                               │
+│    └┤│ Query    │      │DB/HA│       └─┤  ...   │'          │       │ ┌───────────┐                 │
+│   ┌─▶┤ Executor │      └──▲──┘         └────────┘│          │       │ │ Wedge B   .      ┌──────┐   │
+│   │  └──────────┘         │                      │          │       │ │          ( )◀────│json B│   │
+│   │                       │                      │          └───────┤ │     tag B '      └──────┘   │
+│   │                       │                      │                  │ │     ...   │                 │
+│   │                       │                      │                  │ └───────────┘                 │
+│   │                     ┌─┴───┐                  │                  │                               │
+│   │                     │ ┌───┴─┐                │                  │                               │
+│   └─dns load balance────┴─┤ API │                │                  └───────────────────────────────┘
+│                           └─────┘                │                                                   
+└─────────────────────────────( )──────────────────┘                                                   
+                               '                                                                       
+                         https://graphql                                                               
+```
+
 # live demo
-Please refer to [Wiki](https://github.com/bytewedge/bytewedge/wiki) for detailed information. ByteWedge uses tags (up to 10) to identify data source. In [demo](http://ui.demo.bytewedge.com/) cluster, [Two files](https://github.com/bytewedge/bytewedge/tree/master/demo) have been uploaded. Note: both have **demo** tag.
+ByteWedge uses tags (up to 10) to identify data source. In [demo](http://ui.demo.bytewedge.com/) cluster, [Two files](https://github.com/bytewedge/bytewedge/tree/master/demo) have been uploaded. Note: both have **demo** tag.
 
 | name  | origin  |  tag 1  | tag 2   |
 |---|---|---|---|
@@ -55,3 +81,6 @@ query {
   )
 }
 ```
+
+## Install Free Community Edition
+[Instructions](https://github.com/bytewedge/bytewedge/tree/master/charts)
