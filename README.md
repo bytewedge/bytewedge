@@ -1,7 +1,7 @@
 # ByteWedge
-ByteWedge is a schema agnostic Online Analytical Processing system designed for append only time series data. The highlights are:
-* Schema agnostic. Upload a JSON, search, aggregate. DONE!
-* Low total cost ownership. Data storage requires less than 50% data size. For highly repetitive data (machine generated data), storage can be as low as **5% of the original data**.
+ByteWedge is a schema agnostic Online Analytical Processing system designed for append only time series data. With the proliferation of iots, robots and machines, so is the exponential growth of machine generated data. ByteWedge offers business an innovative tool to adapt the speed and dynamic ever changing requirements. Here are some of the highlights:
+* Schema agnostic. Upload JSON, search, aggregate. DONE! Added a new field? upload again, search, aggregate. DONE!
+* Low total cost ownership. Data storage requires less than 50% actual data. For highly repetitive data (machine generated data), storage can be as low as **5% of the actual data**.
 * Supports UTF-8 encoded full text search. Prefix, suffix, exact match, wild card, English, Chinese...
 * Supports GraphQL with, group by, order by and  aggregation functions, like avg, min, max, sum, count, quantile(histogram).
 * Supports [CEL](https://opensource.google/projects/cel) (except builtin macros) in where clause
