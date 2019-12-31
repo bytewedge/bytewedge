@@ -84,3 +84,5 @@ query {
 
 ## Install Free Community Edition
 [Instructions](https://github.com/bytewedge/bytewedge/tree/master/charts)
+
+* Patent Pending : A distributed system architect design for time series data analysis
