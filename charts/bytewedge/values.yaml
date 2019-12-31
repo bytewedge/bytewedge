@@ -29,7 +29,7 @@ cockroachdb:
   port: 26257
 
 image:
-  repository: gcr.io/tslog-244922/bytewedge
+  repository: gcr.io/bytewedge/bytewedge
   tag: latest
   pullPolicy: IfNotPresent
 

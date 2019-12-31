@@ -8,7 +8,7 @@ helm:
   name: svc
 
 image:
-  repository: gcr.io/tslog-244922/bytewedge
+  repository: gcr.io/bytewedge/bytewedge
   pullPolicy: IfNotPresent
 
 postgresql:
