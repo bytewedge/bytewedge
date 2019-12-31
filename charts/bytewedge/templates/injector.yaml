@@ -1,0 +1,122 @@
+{{- $svcRelName := .Values.helm.name -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "bytewedge.fullname" . }}-injector
+  labels:
+    bytewedge: injector
+    {{- include "bytewedge.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.injector.replicaCount }}
+  selector:
+    matchLabels:
+      bytewedge: injector
+      {{- include "bytewedge.selectorLabels" . | nindent 6 }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        bytewedge: injector
+        {{- include "bytewedge.selectorLabels" . | nindent 8 }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ include "bytewedge.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        {{- with .Values.postgresql }}
+        - name: injector-postgresql-ready
+          image: {{ .image }}
+          command: ["sh"]
+          args: ["-c", "until pg_isready -h {{ $svcRelName }}-{{ .host }}; \
+                        do \
+                        echo 'Waiting for postgresql ready at: {{ $svcRelName }}-{{ .host }}'; \
+                        sleep 2; \
+                        done"]
+        {{- end }}
+        {{- with .Values.cockroachdb }}
+        - name: injector-cockroachdb-ready
+          image: busybox
+          command: ["sh"]
+          args: ["-c", "until wget -S -q --spider http://{{ $svcRelName }}-{{ .host }}:{{ .health }}/health?ready=1; \
+                        do \
+                        echo 'waiting cockroachdb @ http://{{ $svcRelName }}-{{ .host }}:{{ .health }}/health?ready=1'; \
+                        sleep 2;
+                        done"]
+        {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}-injector
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          {{- with .Values.image }}
+          image: "{{ .repository }}-injector:{{ .tag }}"
+          imagePullPolicy: {{ .pullPolicy }}
+          {{- end }}
+          command:
+          - /usr/local/bin/bytewedge-injector
+          args:
+          - -blob
+          {{- with .Values.cockroachdb }}
+          - "postgres://blob@{{ $svcRelName }}-{{ .host }}:{{ .port }}/blob?sslmode=disable"
+          {{- end }}
+          - -meta
+          {{- with .Values.postgresql }}
+          - "postgres://wedge:secret@{{ $svcRelName }}-{{ .host }}:{{ .port }}/bytewedge"
+          {{- end }}
+          - -port
+          - {{ .Values.injector.port | quote }}
+          - -dir
+          - /logs
+          workingDir: /logs
+          volumeMounts:
+          - mountPath: /logs
+            name: app-logs
+          env:
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: POD_SERVICE_ACCOUNT
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.serviceAccountName
+          ports:
+            - name: http
+              containerPort: {{ .Values.injector.port }}
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+      - emptyDir: {}
+        name: app-logs
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}

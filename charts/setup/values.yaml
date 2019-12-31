@@ -1,0 +1,206 @@
+# Default values for setup.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: nginx
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: default
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  enabled: false
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+postgresql:
+  image:
+    repository: timescale/pg_prometheus
+    tag: latest-pg11
+  postgresqlPassword: secret
+  postgresqlDatabase: postgres
+  securityContext:
+    fsGroup: 70
+    runAsUser: 70
+  persistence:
+    size: 10Mi
+
+cockroachdb:
+  statefulset:
+    # at least 3
+    replicas: 3
+    resources:
+      requests:
+        memory: 10Mi
+    annotations:
+      prometheus.io/scrape: 'true'
+      prometheus.io/path: '/_status/vars'
+      prometheus.io/port: '8080'
+  storage:
+    persistentVolume:
+      size: 10Mi
+
+#kubectl get secret -n test svc-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+#kubectl port-forward service/svc-grafana 3000:80 -n test
+grafana:
+  replicas: 1
+  rbac:
+    create: false
+    namespaced: true
+    pspEnabled: false
+    pspUseAppArmor: false
+  serviceAccount:
+    create: false
+
+  sidecar:
+    datasources:
+      enabled: true
+    dashboards:
+      enabled: false
+  podAnnotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: '3000'
+
+prometheus:
+  rbac:
+    create: false
+  podSecurityPolicy:
+    enabled: false
+  serviceAccounts:
+    alertmanager:
+      create: false
+    kubeStateMetrics:
+      create: false
+    nodeExporter:
+      create: false
+    pushgateway:
+      create: false
+    server:
+      create: false
+  kubeStateMetrics:
+    enabled: false
+  nodeExporter:
+    enabled: false
+  pushgateway:
+    enabled: false
+  server:
+    enabled: true
+    global:
+      ## How frequently to scrape targets by default
+      ##
+      scrape_interval: 15s
+      ## How long until a scrape request times out
+      ##
+      scrape_timeout: 5s
+      ## How frequently to evaluate rules
+      ##
+      evaluation_interval: 1m
+    #persistentVolume:
+      ## If true, Prometheus server will create/use a Persistent Volume Claim
+      ## If false, use emptyDir
+      ##
+      #enabled: true
+  serverFiles:
+    prometheus.yml:
+      rule_files:
+        - /etc/config/recording_rules.yml
+        - /etc/config/alerting_rules.yml
+      scrape_configs:
+        - job_name: prometheus
+          static_configs:
+            - targets:
+              - localhost:9090
+  extraScrapeConfigs: |-
+    # Example scrape config for pods
+    #
+    # The relabeling allows the actual pod scrape endpoint to be configured via the
+    # following annotations:
+    #
+    # * `prometheus.io/scrape`: Only scrape pods that have a value of `true`
+    # * `prometheus.io/path`: If the metrics path is not `/metrics` override this.
+    # * `prometheus.io/port`: Scrape the pod on the indicated port instead of the default of `9102`.
+    - job_name: 'kubernetes-pods'
+      kubernetes_sd_configs:
+        - role: pod
+          namespaces:
+            names:
+              - "{{ .Release.Namespace }}"
+      relabel_configs:
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+          action: keep
+          regex: true
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+          action: replace
+          target_label: __metrics_path__
+          regex: (.+)
+        - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+          action: replace
+          regex: ([^:]+)(?::\d+)?;(\d+)
+          replacement: $1:$2
+          target_label: __address__
+        - action: labelmap
+          regex: __meta_kubernetes_pod_label_(.+)
+        - source_labels: [__meta_kubernetes_namespace]
+          action: replace
+          target_label: kubernetes_namespace
+        - source_labels: [__meta_kubernetes_pod_name]
+          action: replace
+          target_label: kubernetes_pod_name
+
+prometheus-postgres-exporter:
+  rbac:
+    create: false
+    pspEnabled: false
+  serviceAccount:
+    create: false
+  annotations:
+      prometheus.io/scrape: 'true'
+      prometheus.io/port: '9187'
+  config:
+    datasource:
+      host: |
+       "{{ .Release.Name }}-postgresql"
+      password: secret
+    autoDiscoverDatabases: true

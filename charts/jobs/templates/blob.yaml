@@ -1,0 +1,41 @@
+{{- $svcRelName := .Values.helm.name -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: blob-ddl
+  labels:
+    {{- include "jobs.labels" . | nindent 4 }}
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 10
+  template:
+    metadata:
+      name: {{ include "jobs.fullname" . }}
+      labels:
+        {{- include "jobs.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "jobs.serviceAccountName" . }}
+      initContainers:
+        - name: blob-ddl-busybox
+          image: busybox
+          command: ["sh"]
+          {{- with .Values.cockroachdb }}
+          args: ["-c", "until wget -S -q --spider http://{{ $svcRelName }}-{{ .host }}:{{ .health }}/health?ready=1; \
+                        do \
+                        echo 'waiting cockroachdb @ http://{{ $svcRelName }}-{{ .host }}:{{ .health }}/health?ready=1'; \
+                        sleep 2;
+                        done"]
+          {{- end }}
+      containers:
+        - name: blob-ddl
+          image: "{{ .Values.image.repository }}-jobs:{{ .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /usr/local/bin/bytewedge-jobs
+            - -comp
+            - blob
+            - -blob
+            {{- with .Values.cockroachdb }}
+            - "postgres://root@{{ $svcRelName }}-{{ .host }}:{{ .port }}/?sslmode=disable"
+            {{- end }}
+      restartPolicy: Never

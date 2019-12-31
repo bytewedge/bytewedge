@@ -1,0 +1,50 @@
+{{- if .Values.ingress.enabled -}}
+{{- $fullName := include "bytewedge.fullname" . -}}
+{{- $svcPort := .Values.injector.port -}}
+{{- $domain := .Values.ingress.domain -}}
+{{- if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion -}}
+apiVersion: networking.k8s.io/v1beta1
+{{- else -}}
+apiVersion: extensions/v1beta1
+{{- end }}
+kind: Ingress
+metadata:
+  name: {{ $fullName }}-injector
+  labels:
+    bytewedge: injector
+    {{- include "bytewedge.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- if .Values.certmanager.enabled -}}
+  {{- with .Values.certmanager.annotations }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
+spec:
+{{- if .Values.certmanager.enabled -}}
+{{- if .Values.ingress.injector.tls }}
+  tls:
+  {{- range .Values.ingress.injector.tls }}
+    - hosts:
+      {{- range .hosts }}
+        - {{ . | quote }}
+      {{- end }}
+      secretName: {{ .secretName }}-{{ $domain }}
+  {{- end }}
+{{- end }}
+{{- end }}
+  rules:
+  {{- range .Values.ingress.injector.hosts }}
+    - host: "{{ .host }}.{{ $domain }}"
+      http:
+        paths:
+        {{- range .paths }}
+          - path: {{ . }}
+            backend:
+              serviceName: {{ $fullName }}-injector
+              servicePort: {{ $svcPort }}
+        {{- end }}
+  {{- end }}
+{{- end }}

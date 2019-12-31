@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "bytewedge.fullname" . }}-query
+  labels:
+    bytewedge: query
+    {{- include "bytewedge.labels" . | nindent 4 }}
+spec:
+  ports:
+  {{- with .Values.query }}
+    - port: {{ .port }}
+      targetPort: {{ .port }}
+      name: grpc
+  {{- end }}
+  sessionAffinity: None
+  type: ClusterIP
+  # note: we need use headless to enable dns round robind load balancing
+  clusterIP: None
+  selector:
+    bytewedge: query
+    {{- include "bytewedge.selectorLabels" . | nindent 4 }}

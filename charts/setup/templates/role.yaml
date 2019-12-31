@@ -1,0 +1,11 @@
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: Role
+metadata:
+  name: {{ include "setup.fullname" . }}
+  labels:
+    {{- include "setup.labels" . | nindent 4 }}
+  namespace: {{ .Release.Namespace }}
+rules:
+- apiGroups: [""] # "" indicates the core API group
+  resources: ["pods", "configmaps", "secrets"]
+  verbs: ["get", "watch", "list"]

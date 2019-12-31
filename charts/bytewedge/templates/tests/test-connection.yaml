@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "bytewedge.fullname" . }}-test-connection"
+  labels:
+{{ include "bytewedge.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test-success
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args:  ['{{ include "bytewedge.fullname" . }}:{{ .Values.service.port }}']
+  restartPolicy: Never

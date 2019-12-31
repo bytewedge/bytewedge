@@ -1,0 +1,113 @@
+{{- $svcRelName := .Values.helm.name -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "bytewedge.fullname" . }}-web
+  labels:
+    bytewedge: web
+    {{- include "bytewedge.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.web.replicaCount }}
+  selector:
+    matchLabels:
+      bytewedge: web
+      {{- include "bytewedge.selectorLabels" . | nindent 6 }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        bytewedge: web
+        {{- include "bytewedge.selectorLabels" . | nindent 8 }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ include "bytewedge.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        {{- with .Values.postgresql }}
+        - name: web-postgres-init
+          image: {{ .image }}
+          command: ["sh"]
+          args: ["-c", "until pg_isready -h {{ $svcRelName }}-{{ .host }}; \
+                        do \
+                        echo 'Waiting for postgresql at: {{ .host }}'; \
+                        sleep 2; \
+                        done"]
+        {{- end }}
+        - name: web-query-ready
+          image: busybox
+          command: ["sh"]
+          args: ["-c", "until nc -z {{ include "bytewedge.fullname" . }}-query.{{ .Release.Namespace }}.svc.cluster.local {{ .Values.query.port }}; \
+                        do \
+                        echo 'waiting query headless service to be ready'; \
+                        sleep 2;
+                        done"]
+      containers:
+        - name: {{ .Chart.Name }}-web
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          {{- with .Values.image }}
+          image: "{{ .repository }}-web:{{ .tag }}"
+          imagePullPolicy: {{ .pullPolicy }}
+          {{- end }}
+          command:
+          - /usr/local/bin/bytewedge-web
+          args:
+          - -meta
+          {{- with .Values.postgresql }}
+          - "postgres://wedge:secret@{{ $svcRelName }}-{{ .host }}:{{ .port }}/bytewedge"
+          {{- end }}
+          - -port
+          - {{ .Values.web.port | quote }}
+          - -grpc
+          - "dns:///{{ include "bytewedge.fullname" . }}-query.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.query.port }}"
+          env:
+          - name: GRPC_GO_LOG_VERBOSITY_LEVEL
+            value: "99"
+          - name: GRPC_GO_LOG_SEVERITY_LEVEL
+            value: "warn"
+          - name: NODE_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: POD_IP
+            valueFrom:
+              fieldRef:
+                fieldPath: status.podIP
+          - name: POD_SERVICE_ACCOUNT
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.serviceAccountName
+          ports:
+            - name: http
+              containerPort: {{ .Values.web.port }}
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}

@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "setup.fullname" . }}
+  labels:
+    {{- include "setup.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "setup.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "setup.selectorLabels" . | nindent 8 }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ include "setup.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: prometheus-postgresql-adapter
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "timescale/prometheus-postgresql-adapter:latest"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /prometheus-postgresql-adapter
+          args:
+            - -pg-host
+            - "{{ .Release.Name }}-postgresql"
+            - -pg-password
+            - "secret"
+            - -pg-prometheus-log-samples
+          ports:
+            - name: http
+              containerPort: 9201
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}

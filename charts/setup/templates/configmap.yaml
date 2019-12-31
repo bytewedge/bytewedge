@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-grafana-datasource
+  labels:
+    grafana_datasource: "1"
+    {{- include "setup.labels" . | nindent 4 }}
+data:
+  datasource.yaml: |-
+    apiVersion: 1
+    datasources:
+    - name: Prometheus
+      type: prometheus
+      url: http://{{ .Release.Name }}-prometheus-server/
+      access: proxy
+      isDefault: true
