@@ -1,5 +1,5 @@
 # ByteWedge
-A schema agnostic Online Analytical Processing system designed and built for append only time series data. ByteWedge at its core is a self compressed index, [FM-Indx](https://en.wikipedia.org/wiki/FM-index). Data and index are colocated and compressed in sublinear space. With carefully designed succinct data structuce, ByteWedge can answer complex queires with easy. Here are some of the highlights:
+A schema agnostic Online Analytical Processing system designed and built for append only time series data. ByteWedge at its core is a self compressed index, [FM-Index](https://en.wikipedia.org/wiki/FM-index). Data and index are colocated and compressed in sublinear space. With carefully designed succinct data structuce, ByteWedge can answer complex queires with easy. Here are some of the highlights:
 
 * Schema agnostic.
 * Flexible query with tags. 
