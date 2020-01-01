@@ -1,12 +1,14 @@
 # ByteWedge
-ByteWedge is a schema agnostic Online Analytical Processing system designed for append only time series data. With the proliferation of iots, robots and machines, so is the exponential growth of machine generated data. ByteWedge offers business an innovative tool to adapt the speed and dynamic ever changing requirements. Here are some of the highlights:
-* Schema agnostic. Upload JSON, search, aggregate. DONE! Added a new field? upload again, search, aggregate. DONE!
-* Low total cost ownership. Data storage requires less than 50% actual data. For highly repetitive data (machine generated data), storage can be as low as **5% of the actual data**.
+A schema agnostic Online Analytical Processing system designed and built for append only time series data. ByteWedge at its core is a self compressed index, [FM-Indx](https://en.wikipedia.org/wiki/FM-index). Data and index are colocated and compressed in sublinear space. With carefully designed succinct data structuce, ByteWedge can answer complex queires with easy. Here are some of the highlights:
+
+* Schema agnostic.
+* Flexible query with tags. 
+* Low total cost ownership. Data storage can be as low as **5% of the actual data**.
 * Supports UTF-8 encoded full text search. Prefix, suffix, exact match, wild card, English, Chinese...
-* Supports GraphQL with, group by, order by and  aggregation functions, like avg, min, max, sum, count, quantile(histogram).
+* Supports GraphQL, group by, order by and  aggregation functions, like avg, min, max, sum, count, quantile(histogram).
 * Supports [CEL](https://opensource.google/projects/cel) (except builtin macros) in where clause
 
-Please refer to [Wiki](https://github.com/bytewedge/bytewedge/wiki) for detailed information. 
+With the proliferation of iots, robotics and machines, so is the exponential growth of machine generated data, and the types data they generate. ByteWedge offers business an innovative tool to manage/store/analyze those data with ultra low TCO. ByteWedge employs scale out architecture, please refer to [Wiki](https://github.com/bytewedge/bytewedge/wiki) for details. 
 ```
 ┌─────────────ByteWedge Kubernetes Namespace───────┐                                                   
 │                                                  │                  ┌───Customer Data Center────────┐
