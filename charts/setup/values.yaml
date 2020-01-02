@@ -102,7 +102,6 @@ grafana:
     pspUseAppArmor: false
   serviceAccount:
     create: false
-
   sidecar:
     datasources:
       enabled: true
@@ -111,6 +110,14 @@ grafana:
   podAnnotations:
     prometheus.io/scrape: 'true'
     prometheus.io/port: '3000'
+  grafana.ini:
+    database:
+      type: postgres
+      url: postgres://postgres:secret@postgresql:5432/grafana
+      ssl_mode: require
+    analytics:
+      reporting_enabled: false
+      check_for_updates: false
   extraInitContainers:
   - name: init-postgresql-db
     image: pg_client
