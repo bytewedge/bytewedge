@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-postgresql-adapter
+  labels:
+    {{- include "setup.labels" . | nindent 4 }}
+spec:
+  ports:
+    - port: 9201
+      targetPort: 9201
+      name: http
+  type: ClusterIP
+  # note: we need use headless to enable dns round robind load balancing
+  selector:
+    {{- include "setup.selectorLabels" . | nindent 4 }}

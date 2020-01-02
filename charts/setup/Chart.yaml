@@ -21,9 +21,9 @@ version: 0.1.0
 appVersion: 1.0.0
 
 dependencies:
-  - name: postgresql
-    version: 8.1.2
-    repository: https://kubernetes-charts.storage.googleapis.com/
+  - name: timescaledb-single
+    version: 0.4.0
+    repository: file://../timescaledb-single
   - name: cockroachdb
     version: 3.0.1
     repository: https://kubernetes-charts.storage.googleapis.com
@@ -36,5 +36,3 @@ dependencies:
   - name: prometheus-postgres-exporter
     version: 1.2.0
     repository: https://kubernetes-charts.storage.googleapis.com
-
-
