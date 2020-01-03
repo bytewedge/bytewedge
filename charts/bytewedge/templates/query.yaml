@@ -1,4 +1,3 @@
-{{- $svcRelName := .Values.helm.name -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -31,16 +30,17 @@ spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       initContainers:
-        {{- with .Values.cockroachdb }}
         - name: query-cockroachdb-ready
-          image: busybox
-          command: ["sh"]
-          args: ["-c", "until wget -S -q --spider http://{{ $svcRelName }}-{{ .host }}:{{ .health }}/health?ready=1; \
-                        do \
-                        echo 'waiting cockroachdb @ http://{{ $svcRelName }}-{{ .host }}:{{ .health }}/health?ready=1'; \
-                        sleep 2;
-                        done"]
-        {{- end }}
+          {{- with .Values.postgresql }}
+          image: {{ .image }}
+          imagePullPolicy: {{ .pullPolicy }}
+          {{- end }}
+          command: ["sh", "-c"]
+          args: ["until psql postgres://blob@{{ .Release.Name }}-cockroachdb-public:26257/blob?sslmode=disable -c '\\q'; \
+                  do \
+                  echo 'waiting postgres://blob@{{ .Release.Name }}-cockroachdb-public:26257/blob?sslmode=disable'; \
+                  sleep 5; \
+                  done"]
       containers:
         - name: {{ .Chart.Name }}-query
           securityContext:
@@ -53,9 +53,7 @@ spec:
           - /usr/local/bin/bytewedge-query
           args:
           - -blob
-          {{- with .Values.cockroachdb }}
-          - "postgres://blob@{{ $svcRelName }}-{{ .host }}:{{ .port }}/blob?sslmode=disable"
-          {{- end }}
+          - "postgres://blob@{{ .Release.Name }}-cockroachdb-public:26257/blob?sslmode=disable"
           - -port
           - {{ .Values.query.port | quote }}
           env:

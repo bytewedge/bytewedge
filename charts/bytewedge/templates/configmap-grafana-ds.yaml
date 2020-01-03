@@ -4,7 +4,7 @@ metadata:
   name: prometheus-grafana-datasource
   labels:
     grafana_datasource: "1"
-    {{- include "setup.labels" . | nindent 4 }}
+    {{- include "bytewedge.labels" . | nindent 4 }}
 data:
   datasource.yaml: |-
     apiVersion: 1

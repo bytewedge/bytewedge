@@ -3,30 +3,26 @@
 # Declare variables to be passed into your templates.
 
 injector:
-  replicaCount: 1
+  replicaCount: 2
   port: 8001
 
 helm:
   name: svc
 
 query:
-  replicaCount: 1
+  replicaCount: 3
   port: 8002
 
 web:
-  replicaCount: 1
+  replicaCount: 2
   port: 8003
 
 postgresql:
   # image contains pg_isready
-  image: timescale/pg_prometheus:latest-pg11
+  image: pg_client
+  pullPolicy: IfNotPresent
   host: postgresql
   port: 5432
-
-cockroachdb:
-  host: cockroachdb-public
-  health: 8080
-  port: 26257
 
 image:
   repository: gcr.io/bytewedge/bytewedge
@@ -113,3 +109,198 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+# dependencies start
+timescaledb-single:
+  replicaCount: 2
+  clusterName: postgresql
+  patroni:
+    bootstrap:
+      dcs:
+        postgresql:
+          parameters:
+            shared_preload_libraries: timescaledb,pg_prometheus,pg_stat_statements
+  credentials:
+    admin: secret
+    postgres: secret
+    standby: secret
+  persistentVolumes:
+    data:
+      size: 10Mi
+    wal:
+      size: 2Mi
+  serviceAccount:
+    create: false
+
+cockroachdb:
+  statefulset:
+    # at least 3
+    replicas: 3
+    resources:
+      requests:
+        memory: 10Mi
+    annotations:
+      prometheus.io/scrape: 'true'
+      prometheus.io/path: '/_status/vars'
+      prometheus.io/port: '8080'
+  storage:
+    persistentVolume:
+      size: 10Mi
+
+#kubectl get secret -n test svc-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+#kubectl port-forward service/svc-grafana 3000:80 -n test
+grafana:
+  replicas: 1
+  adminPassword: precious
+  rbac:
+    create: false
+    namespaced: true
+    pspEnabled: false
+    pspUseAppArmor: false
+  serviceAccount:
+    create: false
+  sidecar:
+    datasources:
+      enabled: true
+    dashboards:
+      enabled: false
+  podAnnotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: '3000'
+  grafana.ini:
+    database:
+      type: postgres
+      url: postgres://postgres:secret@postgresql:5432/grafana
+      ssl_mode: require
+    analytics:
+      reporting_enabled: false
+      check_for_updates: false
+  extraInitContainers:
+  - name: init-postgresql-db
+    image: pg_client
+    imagePullPolicy: IfNotPresent
+    env:
+    - name: PGPASSWORD
+      value: secret
+    - name: PGUSER
+      value: postgres
+    # -h postgresql must be the same value as timescaledb-single.clusterName
+    - name: PGHOST
+      value: postgresql
+    command: ["sh", "-c"] 
+    args: ["until pg_isready; do echo \"Waiting for postgresql at: ${PGHOST}\"; sleep 5; done; \
+            psql -tc \"SELECT 1 FROM pg_database WHERE datname = 'grafana'\" \
+            | grep -q 1 || psql -c \"CREATE DATABASE grafana\""]
+
+prometheus:
+  rbac:
+    create: false
+  podSecurityPolicy:
+    enabled: false
+  serviceAccounts:
+    alertmanager:
+      create: false
+    kubeStateMetrics:
+      create: false
+    nodeExporter:
+      create: false
+    pushgateway:
+      create: false
+    server:
+      create: false
+  alertmanager:
+    enabled: false
+  kubeStateMetrics:
+    enabled: false
+  nodeExporter:
+    enabled: false
+  pushgateway:
+    enabled: false
+  server:
+    enabled: true
+    extraInitContainers:
+    - name: init-postgresql-adapter
+      image: busybox
+      imagePullPolicy: IfNotPresent
+      command: ["sh", "-c"] 
+      args: ["until nc -zv prometheus-postgresql-adapter 9201; \
+              do echo 'waiting for prometheus adapter'; sleep 5; done"]
+    remote_write:
+        - url: "http://prometheus-postgresql-adapter:9201/write"
+    remote_read:
+        - url: "http://prometheus-postgresql-adapter:9201/read"
+    persistentVolume:
+      enabled: false
+    global:
+      ## How frequently to scrape targets by default
+      ##
+      scrape_interval: 15s
+      ## How long until a scrape request times out
+      ##
+      scrape_timeout: 5s
+      ## How frequently to evaluate rules
+      ##
+      evaluation_interval: 1m
+    alertmanagers: []
+  serverFiles:
+    prometheus.yml:
+      rule_files:
+        - /etc/config/recording_rules.yml
+        - /etc/config/alerting_rules.yml
+      scrape_configs:
+        - job_name: prometheus
+          static_configs:
+            - targets:
+              - localhost:9090
+  extraScrapeConfigs: |-
+    # Example scrape config for pods
+    #
+    # The relabeling allows the actual pod scrape endpoint to be configured via the
+    # following annotations:
+    #
+    # * `prometheus.io/scrape`: Only scrape pods that have a value of `true`
+    # * `prometheus.io/path`: If the metrics path is not `/metrics` override this.
+    # * `prometheus.io/port`: Scrape the pod on the indicated port instead of the default of `9102`.
+    - job_name: 'kubernetes-pods'
+      kubernetes_sd_configs:
+        - role: pod
+          namespaces:
+            names:
+              - "{{ .Release.Namespace }}"
+      relabel_configs:
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+          action: keep
+          regex: true
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+          action: replace
+          target_label: __metrics_path__
+          regex: (.+)
+        - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+          action: replace
+          regex: ([^:]+)(?::\d+)?;(\d+)
+          replacement: $1:$2
+          target_label: __address__
+        - action: labelmap
+          regex: __meta_kubernetes_pod_label_(.+)
+        - source_labels: [__meta_kubernetes_namespace]
+          action: replace
+          target_label: kubernetes_namespace
+        - source_labels: [__meta_kubernetes_pod_name]
+          action: replace
+          target_label: kubernetes_pod_name
+
+prometheus-postgres-exporter:
+  rbac:
+    create: false
+    pspEnabled: false
+  serviceAccount:
+    create: false
+  annotations:
+      prometheus.io/scrape: 'true'
+      prometheus.io/port: '9187'
+  config:
+    datasource:
+      host: |
+       "{{ .Release.Name }}-postgresql"
+      password: secret
+    autoDiscoverDatabases: true

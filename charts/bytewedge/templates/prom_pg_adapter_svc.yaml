@@ -3,7 +3,8 @@ kind: Service
 metadata:
   name: prometheus-postgresql-adapter
   labels:
-    {{- include "setup.labels" . | nindent 4 }}
+    bytewedge: prometheus
+    {{- include "bytewedge.labels" . | nindent 4 }}
 spec:
   ports:
     - port: 9201
@@ -12,4 +13,5 @@ spec:
   type: ClusterIP
   # note: we need use headless to enable dns round robind load balancing
   selector:
-    {{- include "setup.selectorLabels" . | nindent 4 }}
+    bytewedge: prometheus
+    {{- include "bytewedge.selectorLabels" . | nindent 4 }}

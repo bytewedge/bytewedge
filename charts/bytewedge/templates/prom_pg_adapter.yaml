@@ -3,28 +3,33 @@ kind: Deployment
 metadata:
   name: prometheus-postgresql-adapter
   labels:
-    {{- include "setup.labels" . | nindent 4 }}
+    bytewedge: prometheus
+    {{- include "bytewedge.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "setup.selectorLabels" . | nindent 6 }}
+      bytewedge: prometheus
+      {{- include "bytewedge.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "setup.selectorLabels" . | nindent 8 }}
+        bytewedge: prometheus
+        {{- include "bytewedge.selectorLabels" . | nindent 8 }}
     spec:
     {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
     {{- end }}
-      serviceAccountName: {{ include "setup.serviceAccountName" . }}
+      serviceAccountName: {{ include "bytewedge.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       initContainers:
-        - name: init-postgresql-db
-          image: pg_client
-          imagePullPolicy: IfNotPresent
+        - name: prom-adapter-postgresql-db
+          {{- with .Values.postgresql }}
+          image: {{ .image }}
+          imagePullPolicy: {{ .pullPolicy }}
+          {{- end }}
           env:
           - name: PGPASSWORD
             value: secret
@@ -34,7 +39,8 @@ spec:
           - name: PGHOST
             value: postgresql
           command: ["sh", "-c"] 
-          args: ["until pg_isready; do echo \"Waiting for postgresql at: ${PGHOST}\"; sleep 5; done; \
+          args: ["until psql -c '\\q'; \
+                  do echo \"Waiting for postgresql at: ${PGHOST}\"; sleep 5; done; \
                   psql -tc \"SELECT 1 FROM pg_database WHERE datname = 'prometheus'\" \
                   | grep -q 1 || psql -c \"CREATE DATABASE prometheus\""]
       containers:

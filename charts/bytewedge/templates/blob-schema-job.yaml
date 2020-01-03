@@ -1,0 +1,44 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: blob-ddl
+  labels:
+    bytewedge: blob
+    {{- include "bytewedge.labels" . | nindent 4 }}
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 10
+  template:
+    metadata:
+      name: {{ include "bytewedge.fullname" . }}
+      labels:
+        bytewedge: blob
+        {{- include "bytewedge.selectorLabels" . | nindent 8 }}
+
+    spec:
+      serviceAccountName: {{ include "bytewedge.serviceAccountName" . }}
+      initContainers:
+        - name: blob-ddl-busybox
+          {{- with .Values.postgresql }}
+          image: {{ .image }}
+          imagePullPolicy: {{ .pullPolicy }}
+          {{- end }}
+          command: ["sh", "-c"]
+          args: ["until psql postgres://root@{{ .Release.Name }}-cockroachdb-public:26257/?sslmode=disable -c '\\q'; \
+                  do \
+                  echo 'waiting postgres://root@{{ .Release.Name }}-cockroachdb-public:26257/?sslmode=disable'; \
+                  sleep 5; \
+                  done"]
+      containers:
+        - name: blob-ddl
+          {{- with .Values.image }}
+          image: "{{ .repository }}-jobs:{{ .tag }}"
+          imagePullPolicy: {{ .pullPolicy }}
+          {{- end }}
+          command:
+            - /usr/local/bin/bytewedge-jobs
+            - -comp
+            - blob
+            - -blob
+            - "postgres://root@{{ .Release.Name }}-cockroachdb-public:26257/?sslmode=disable"
+      restartPolicy: Never

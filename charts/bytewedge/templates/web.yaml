@@ -1,4 +1,3 @@
-{{- $svcRelName := .Values.helm.name -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -31,18 +30,28 @@ spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       initContainers:
-        {{- with .Values.postgresql }}
         - name: web-postgres-init
+          {{- with .Values.postgresql }}
           image: {{ .image }}
-          command: ["sh"]
-          args: ["-c", "until pg_isready -h {{ $svcRelName }}-{{ .host }}; \
-                        do \
-                        echo 'Waiting for postgresql at: {{ .host }}'; \
-                        sleep 2; \
-                        done"]
-        {{- end }}
+          imagePullPolicy: {{ .pullPolicy }}
+          {{- end }}
+          env:
+          - name: PGPASSWORD
+            value: secret
+          - name: PGUSER
+            value: postgres
+          # -h postgresql must be the same value as timescaledb-single.clusterName
+          - name: PGHOST
+            value: postgresql
+          command: ["sh", "-c"] 
+          args: ["until psql -d bytewedge -c '\\q'; \
+                  do \
+                  echo 'waiting postgresql bytewedge'; \
+                  sleep 5;
+                  done"]
         - name: web-query-ready
           image: busybox
+          imagePullPolicy: IfNotPresent
           command: ["sh"]
           args: ["-c", "until nc -z {{ include "bytewedge.fullname" . }}-query.{{ .Release.Namespace }}.svc.cluster.local {{ .Values.query.port }}; \
                         do \
@@ -62,7 +71,7 @@ spec:
           args:
           - -meta
           {{- with .Values.postgresql }}
-          - "postgres://wedge:secret@{{ $svcRelName }}-{{ .host }}:{{ .port }}/bytewedge"
+          - "postgres://postgres:secret@{{ .host }}:{{ .port }}/bytewedge?sslmode=require"
           {{- end }}
           - -port
           - {{ .Values.web.port | quote }}
