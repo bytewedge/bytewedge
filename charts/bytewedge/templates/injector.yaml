@@ -21,6 +21,9 @@ spec:
       labels:
         bytewedge: injector
         {{- include "bytewedge.selectorLabels" . | nindent 8 }}
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: {{ .Values.injector.port | quote }}
     spec:
     {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -110,7 +113,7 @@ spec:
               containerPort: {{ .Values.injector.port }}
               protocol: TCP
           resources:
-            {{- toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.injector.resources | nindent 12 }}
       volumes:
       - emptyDir: {}
         name: app-logs
