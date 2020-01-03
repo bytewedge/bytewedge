@@ -19,7 +19,7 @@ web:
 
 postgresql:
   # image contains pg_isready
-  image: pg_client
+  image: gcr.io/bytewedge/bytewedge-pgclient
   pullPolicy: IfNotPresent
   host: postgresql
   port: 5432
@@ -177,7 +177,7 @@ grafana:
       check_for_updates: false
   extraInitContainers:
   - name: init-postgresql-db
-    image: pg_client
+    image: gcr.io/bytewedge/bytewedge-pgclient
     imagePullPolicy: IfNotPresent
     env:
     - name: PGPASSWORD
