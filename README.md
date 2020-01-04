@@ -31,8 +31,18 @@ With the proliferation of iots, robotics and machines, so is the exponential gro
 │                           └─────┘                │                                                   
 └─────────────────────────────( )──────────────────┘                                                   
                                '                                                                       
-                         https://graphql                                                                                                                     
+                         https://graphql
 ```
+# The difference from other systems
+Like all systems, ByteWedge tries to limit IO and make data available in main memory for computation. The followings are ByteWedge does differently from others.
+1. Indexing storage. In ByteWedge, data and index are colocated and compressed. Other systems need separate storage for data and index.
+2. Indexing time. In ByteWedge, indexing is done at Edge, instantly usable in its compressed form. Other systems are building index on the server.
+3. Full text search & aggregation. ByteWedge supports both. Others can only support one or the other.
+4. Flexible data source selection. ByteWedge uses tags to label data sources, user can mix and match at query time. Where other systems can only search among predefined index.
+5. ETL is optional. ByteWedge doesn't need expensive ETL. With embedding hierarchy tree in its succinct data structure, ByteWedge can answer queries in different shape and sizes. Other systems require ETL to slice and dice data before the data is queriable. 
+6. Low IO. ByteWedge requires [much fewer IO](https://github.com/bytewedge/bytewedge/wiki/A-Byte's-Life), where others need to shuttle data during either ETL or query processing.
+7. Advanced full text search. ByteWedge supports prefix, suffix, wildcard etc without any resource constraint.
+8. Support Agile development. ByteWedge is schema agnostic, add/delete/change data fields requires no actions. In other systems, such change requires updating ETL pipeline or rebuilding entire index.
 
 # live demo
 ByteWedge uses tags (up to 10) to identify data source. In [demo](http://ui.demo.bytewedge.com/) cluster, [Two files](https://github.com/bytewedge/bytewedge/tree/master/demo) have been uploaded. Note: both have **demo** tag.
