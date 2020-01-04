@@ -41,8 +41,8 @@ spec:
           command: ["sh", "-c"] 
           args: ["until psql -c '\\q'; \
                   do echo \"Waiting for postgresql at: ${PGHOST}\"; sleep 5; done; \
-                  psql -tc \"SELECT 1 FROM pg_database WHERE datname = 'prometheus'\" \
-                  | grep -q 1 || psql -c \"CREATE DATABASE prometheus\""]
+                  psql -tc \"SELECT 1 FROM pg_database WHERE datname = 'prometheus'\" | grep -q 1 || \
+                  psql -c \"CREATE DATABASE prometheus\" -c \"CREATE EXTENSION pg_stat_statements\""]
       containers:
         - name: prometheus-postgresql-adapter
           securityContext:

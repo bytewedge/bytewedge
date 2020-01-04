@@ -23,7 +23,7 @@ appVersion: 1.0.0
 dependencies:
   - name: timescaledb-single
     version: 0.4.0
-    repository: file://../../../../timescaledb-kubernetes/charts/timescaledb-single
+    repository: file://../../../timescaledb-kubernetes/charts/timescaledb-single
   - name: cockroachdb
     version: 3.0.1
     repository: https://kubernetes-charts.storage.googleapis.com

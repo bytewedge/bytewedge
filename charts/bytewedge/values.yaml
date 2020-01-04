@@ -318,7 +318,6 @@ prometheus-postgres-exporter:
       prometheus.io/port: '9187'
   config:
     datasource:
-      host: |
-       "{{ .Release.Name }}-postgresql"
+      host: postgresql
       password: secret
     autoDiscoverDatabases: true
