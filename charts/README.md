@@ -30,3 +30,12 @@ NAME                    HOSTS                      ADDRESS         PORTS   AGE
 bw-bytewedge-injector   injector.bytewedge.local   192.168.64.28   80      12h
 bw-bytewedge-web        ui.bytewedge.local         192.168.64.28   80      12h
 ```
+7. extract wedge cert
+```
+❯❯❯ kubectl get secret -n bwdemo wedge -o jsonpath="{.data.cert}" | base64 --decode ; echo
+<cert token>
+```
+8. start Wedge
+```
+WEDGE_CERT=<cert token> ./wedge -id <user defined id> -port 8080 -mqtt "ws://injector.bytewedge.local/mqtt" -tags demo,tag1 -interval 1
+```
