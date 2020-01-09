@@ -18,19 +18,15 @@ injector:
     #   memory: 128Mi
 
 query:
-  replicaCount: 3
+  replicaCount: 5
   port: 8002
-  resources: {}
-    # We usually recommend not to specify default resources and to leave this as a conscious
-    # choice for the user. This also increases chances charts run on environments with little
-    # resources, such as Minikube. If you do want to specify resources, uncomment the following
-    # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-    # limits:
-    #   cpu: 100m
-    #   memory: 128Mi
-    # requests:
-    #   cpu: 100m
-    #   memory: 128Mi
+  resources:
+    limits:
+      cpu: 6
+      memory: 16Gi
+    requests:
+      cpu: 6
+      memory: 16Gi
 
 web:
   replicaCount: 2
@@ -165,25 +161,31 @@ timescaledb-single:
     standby: secret
   persistentVolumes:
     data:
-      size: 10Mi
+      size: 20Gi
     wal:
-      size: 2Mi
-
+      size: 20Gi
+  resources:
+    limits:
+      memory: 12Gi
+    requests:
+      memory: 12Gi
 
 cockroachdb:
   statefulset:
     # at least 3
-    replicas: 3
+    replicas: 5
     resources:
+      limits:
+        memory: 12Gi
       requests:
-        memory: 10Mi
+        memory: 12Gi
     annotations:
       prometheus.io/scrape: 'true'
       prometheus.io/path: '/_status/vars'
       prometheus.io/port: '8080'
   storage:
     persistentVolume:
-      size: 10Mi
+      size: 20Gi
 
 #kubectl get secret -n test svc-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
 #kubectl port-forward service/svc-grafana 3000:80 -n test
