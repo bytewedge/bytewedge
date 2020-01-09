@@ -2,10 +2,9 @@
 
 Note: the instruction depends on Helm v3.
 
-1. Clone this github repo and timescaledb kubernetes repo
+1. Clone this github repo
 ```
 git clone https://github.com/bytewedge/bytewedge.git
-git clone https://github.com/timescale/timescaledb-kubernetes.git
 ```
 2. cd to charts directory
 ```
