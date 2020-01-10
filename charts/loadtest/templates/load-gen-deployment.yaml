@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: load-gen
+  labels:
+    {{- include "loadtest.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "loadtest.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "loadtest.selectorLabels" . | nindent 8 }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ include "loadtest.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: otelcol-ready
+          image: busybox
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c"]
+          args: ["until nc -zv jaeger-collector {{ .Values.otelcol.port }}; \
+                  do echo 'waiting for jaeger-collector {{ .Values.otelcol.port }}'; sleep 5; done"]
+      containers:
+        - name: synthetic-load-gen
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          {{- with .Values.image }}
+          image: "{{ .repository }}/synthetic-load-generator:{{ .tag }}"
+          imagePullPolicy: {{ .pullPolicy }}
+          {{- end }}
+          command: ["/opt/omnition/start.sh"]
+          env:
+          - name: TOPOLOGY_FILE
+            value: {{ .Values.synthetic.load | quote }}
+          - name: JAEGER_COLLECTOR_URL
+            value: "http://jaeger-collector:{{ .Values.otelcol.port }}"
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}

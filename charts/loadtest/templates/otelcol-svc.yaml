@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger-collector
+  labels:
+    {{- include "loadtest.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.otelcol.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    loadtest: otelcol
+    {{- include "loadtest.selectorLabels" . | nindent 4 }}

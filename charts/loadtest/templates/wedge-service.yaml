@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: wedge
+  labels:
+    {{- include "loadtest.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.wedge.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    loadtest: wedge
+    {{- include "loadtest.selectorLabels" . | nindent 4 }}

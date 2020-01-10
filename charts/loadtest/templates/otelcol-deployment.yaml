@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otelcol
+  labels:
+    {{- include "loadtest.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      loadtest: otelcol
+      {{- include "loadtest.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        loadtest: otelcol
+        {{- include "loadtest.selectorLabels" . | nindent 8 }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ include "loadtest.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: wedge-ready
+          image: busybox
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c"]
+          args: ["until nc -zv wedge {{ .Values.wedge.port }}; \
+                  do echo 'waiting for wedge {{ .Values.wedge.port }}'; sleep 5; done"]
+      containers:
+        - name: otelcol
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          {{- with .Values.image }}
+          image: "{{ .repository }}/otelcol:{{ .tag }}"
+          imagePullPolicy: {{ .pullPolicy }}
+          {{- end }}
+          command: ["/usr/local/bin/otelcol"]
+          args:
+            - --config
+            - "/etc/otelcol/config.yaml"
+          volumeMounts:
+          - mountPath: /etc/otelcol
+            name: otelcol-config
+          ports:
+            - name: http
+              containerPort: {{ .Values.otelcol.port }}
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+      - configMap:
+          defaultMode: 420
+          items:
+          - key: relay
+            path: config.yaml
+          name: otelcol-config
+        name: otelcol-config
+      - emptyDir: {}
+        name: app-logs
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
