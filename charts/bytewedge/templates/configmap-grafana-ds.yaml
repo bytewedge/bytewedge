@@ -14,3 +14,18 @@ data:
       url: http://{{ .Release.Name }}-prometheus-server/
       access: proxy
       isDefault: true
+    # https://grafana.com/docs/grafana/latest/features/datasources/postgres/
+    - name: PostgreSQL
+      type: postgres
+      url: postgresql:5432
+      database: bytewedge
+      user: postgres
+      secureJsonData:
+        password: "secret"
+      jsonData:
+        sslmode: "require"
+        maxOpenConns: 1
+        maxIdleConns: 2
+        connMaxLifetime: 14400
+        postgresVersion: 1000
+        timescaledb: true
