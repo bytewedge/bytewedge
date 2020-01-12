@@ -25,7 +25,8 @@ otelcol:
   port: 8080
 
 synthetic:
-  load: topologies/100_000_spans_per_second.json
+  load: topologies/hipster-shop.json
+  #load: topologies/100_000_spans_per_second.json
 
 serviceAccount:
   # Specifies whether a service account should be created

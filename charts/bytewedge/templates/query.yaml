@@ -64,6 +64,8 @@ spec:
             value: "99"
           - name: GRPC_GO_LOG_SEVERITY_LEVEL
             value: "warn"
+          - name: CACHE_SIZE
+            value: {{ .Values.query.cache | quote }}
           - name: NODE_NAME
             valueFrom:
               fieldRef:
