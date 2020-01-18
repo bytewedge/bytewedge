@@ -3,7 +3,7 @@
 # Declare variables to be passed into your templates.
 
 injector:
-  replicaCount: 2
+  replicaCount: 1
   port: 8001
   resources: {}
     # We usually recommend not to specify default resources and to leave this as a conscious
@@ -35,7 +35,7 @@ query:
     #   memory: 128Mi
 
 web:
-  replicaCount: 2
+  replicaCount: 1
   port: 8003
   resources: {}
     # We usually recommend not to specify default resources and to leave this as a conscious
@@ -147,7 +147,7 @@ affinity: {}
 
 # dependencies start
 timescaledb-single:
-  replicaCount: 2
+  replicaCount: 1
   clusterName: postgresql
   serviceAccount:
     create: false

@@ -22,16 +22,16 @@ appVersion: 1.0.0
 
 dependencies:
   - name: timescaledb-single
-    version: 0.4.0
+    version: 0.5.0
     repository: https://raw.githubusercontent.com/timescale/timescaledb-kubernetes/master/charts/repo/
   - name: cockroachdb
-    version: 3.0.1
+    version: 3.0.2
     repository: https://kubernetes-charts.storage.googleapis.com
   - name: prometheus
-    version: 9.7.2
+    version: 10.3.1
     repository: https://kubernetes-charts.storage.googleapis.com
   - name: grafana
-    version: 4.2.2
+    version: 4.3.2
     repository: https://kubernetes-charts.storage.googleapis.com
   - name: prometheus-postgres-exporter
     version: 1.2.0

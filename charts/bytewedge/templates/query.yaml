@@ -32,6 +32,30 @@ spec:
       serviceAccountName: {{ include "bytewedge.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      tolerations:
+        - key: "cpu"
+          value: "high"
+          operator: "Equal"
+          effect: "NoSchedule"
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: "cpu"
+                operator: In
+                values:
+                - "high"
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    bytewedge: query
+                    {{- include "bytewedge.selectorLabels" . | nindent 20 }}
       initContainers:
         - name: query-cockroachdb-ready
           {{- with .Values.postgresql }}

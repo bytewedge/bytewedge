@@ -1,13 +1,28 @@
+injector:
+  replicaCount: 2
+  resources:
+    limits:
+      memory: 2Gi
+
+web:
+  replicaCount: 2
+  resources:
+    limits:
+      memory: 5Gi
+
 query:
-  replicaCount: 5
+  replicaCount: 3
   # unit of GB
   cache: 10
   resources:
+    limits:
+      memory: 12Gi
     requests:
-      cpu: 3
+      cpu: 10
       memory: 10Gi
 # dependencies start
 timescaledb-single:
+  replicaCount: 2
   persistentVolumes:
     data:
       size: 20Gi
@@ -20,10 +35,14 @@ timescaledb-single:
 cockroachdb:
   statefulset:
     # at least 3
-    replicas: 5
+    replicas: 3
     resources:
       requests:
-        memory: 2Gi
+        memory: 4Gi
+    podAntiAffinity:
+      # Type of anti-affinity rules: either `soft`, `hard` or empty value (which
+      # disables anti-affinity rules).
+      type: hard
   storage:
     persistentVolume:
       size: 50Gi
