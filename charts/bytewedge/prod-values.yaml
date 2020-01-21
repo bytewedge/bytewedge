@@ -14,12 +14,14 @@ query:
   replicaCount: 3
   # unit of GB
   cache: 10
+  ratio: 1
   resources:
     limits:
       memory: 12Gi
     requests:
       cpu: 10
       memory: 10Gi
+
 # dependencies start
 timescaledb-single:
   replicaCount: 2
@@ -30,7 +32,7 @@ timescaledb-single:
       size: 20Gi
   resources:
     requests:
-      memory: 4Gi
+      memory: 3Gi
 
 cockroachdb:
   statefulset:
@@ -38,7 +40,7 @@ cockroachdb:
     replicas: 3
     resources:
       requests:
-        memory: 4Gi
+        memory: 3Gi
     podAntiAffinity:
       # Type of anti-affinity rules: either `soft`, `hard` or empty value (which
       # disables anti-affinity rules).
